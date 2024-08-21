@@ -1,3 +1,4 @@
+import { usePlayerStore } from "@/store/playerStore";
 import { useState, useRef, useEffect } from "react";
 
 export const Pause = ({ className }) => (
@@ -57,28 +58,49 @@ export const Volume = () => (
   </svg>
 );
 
+const CurrentSong = ({ image, title, artists }) => {
+  return (
+    <div className={`flex items-center gap-5 relative overflow-hidden`}>
+      <picture className="w-16 h-16 bg-zinc-800 rounded-md shadow-lg overflow-hidden">
+        <img src={image} alt={title} />
+      </picture>
+
+      <div className="flex flex-col">
+        <h3 className="font-semibold text-sm block">{title}</h3>
+        <span className="text-xs opacity-80">{artists?.join(", ")}</span>
+      </div>
+    </div>
+  );
+};
+
 export function Player() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentSong, setCurrentSong] = useState(null);
+  const { isPlaying, setIsPlaying, currentMusic } = usePlayerStore(
+    (state) => state
+  );
   const audioRef = useRef();
 
   useEffect(() => {
-    audioRef.current.src = `/music/1/01.mp3`;
-  }, []);
+    isPlaying ? audioRef.current.play() : audioRef.current.pause();
+  }, [isPlaying]);
+
+  useEffect(() => {
+    const { song, playlist, songs } = currentMusic;
+    if (song) {
+      const src = `/music/${playlist?.id}/0${song.id}.mp3`;
+      audioRef.current.src = src;
+      audioRef.current.play();
+    }
+  }, [currentMusic]);
 
   const handleClick = () => {
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-      audioRef.current.volume = 0.1;
-    }
     setIsPlaying(!isPlaying);
   };
 
   return (
     <div className="flex justify-between flex-row w-full px-4 z-50">
-      <div>CurrentSong...</div>
+      <div>
+        <CurrentSong {...currentMusic.song} />
+      </div>
       <div className="grid place-content-center gap-4 flex-1">
         <div className="flex justify-content">
           <button className="bg-white rounded-full p-2" onClick={handleClick}>
